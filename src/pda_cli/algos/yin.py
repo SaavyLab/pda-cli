@@ -29,8 +29,14 @@ def yin(
     cmndf = df.copy()
     cmndf[0] = 1
 
+    cumulative = np.cumsum(df[1:], dtype=np.float32)
+
     for tau in range(1, tau_max):
-        cmndf[tau] = df[tau] / ((1 / tau) * np.sum(df[1 : tau + 1]))
+        denom_sum = cumulative[tau - 1] if tau - 1 < len(cumulative) else cumulative[-1]
+        if denom_sum > 0:
+            cmndf[tau] = df[tau] * tau / denom_sum
+        else:
+            cmndf[tau] = 1
 
     tau = 1
     while tau < tau_max - 1:

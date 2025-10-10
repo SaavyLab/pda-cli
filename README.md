@@ -1,88 +1,76 @@
 # pda-cli
 
-> a zero‑friction, cross‑platform **p**itch‑**d**etection‑**a**lgorithm sandbox you can run from any terminal.
+`pda-cli` is a python command-line tool for comparing pitch detection algorithms side by side. it streams from portaudio via `sounddevice`, supports file-based runs, and prints the detected pitch in real time so you can hear how each method behaves.
 
----
+## overview
 
-## ✨ features
+- switch between `zcr`, `acf`, `yin`, and `mpm` without restarting
+- live capture with configurable sample rate, frame size, and device
+- optional smoothing, amplitude gating, and update throttling for stable output
+- csv logging for later inspection and a benchmark script for accuracy sweeps
+- pure python (numpy) with no compiled extensions
 
-* **toggle PDAs at runtime** – `--algo zcr|acf|yin|mpm`
-* **real‑time capture** via [`sounddevice`](https://python-sounddevice.readthedocs.io/) (PortAudio)
-* **mic *or* line‑in** – works with built‑ins, USB interfaces (Scarlett Solo, etc.)
-* **snappy CLI output** – ≤ 50 ms hop, prints `440.01 Hz` live
-* **pure‑python** (NumPy/SciPy); no compiler required
-* **MIT‑licensed**, hack & ship without lawyer tears
-
----
-
-## 🚀 quick start
+## install
 
 ```bash
-# clone & bootstrap deps
-$ git clone https://github.com/yourname/pda-cli.git
-$ cd pda-cli
-$ uv venv
-$ source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
-$ uv pip install -e .
-
-# run with default (YIN)
-$ pda                          # whistle and watch the freq scroll
-
-# swap to MPM with smaller frame
-$ pda --algo mpm --frames 1024
+git clone https://github.com/yourname/pda-cli.git
+cd pda-cli
+uv venv
+source .venv/bin/activate
+uv pip install -e .
 ```
 
-### command‑line flags
+## usage
 
-| flag             | default        | description                                   |
-| ---------------- | -------------- | --------------------------------------------- |
-| `--algo`         | `yin`          | `zcr`, `acf`, `yin`, `mpm`                    |
-| `--sr`           | `48000`        | sample‑rate (Hz)                              |
-| `--frames`       | `2048`         | window length (samples)                       |
-| `--device`       | system default | capture device name/id (see `--list-devices`) |
-| `--list-devices` | –              | print available PortAudio devices & quit      |
-| `--file`         | –              | process audio file instead of mic input       |
-| `--debug`        | –              | show debug info (RMS levels)                  |
-| `--no-cents`     | –              | hide cents offset in note display             |
-| `--smooth`       | `5`            | smoothing window size (0 to disable)          |
-| `--gate`         | `0.005`        | amplitude gate threshold (RMS)                |
-| `--log`          | –              | log results to CSV file                       |
-| `--update-rate`  | `10`           | display updates per second (Hz)               |
+### list devices
 
----
+```bash
+pda --list-devices
+```
 
-## 🧩 algorithms included (PDA key)
+### capture from the default input
 
-| id      | core idea                                                       | source                                                                             |
-| ------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| **zcr** | zero‑crossing rate                                              | \~20 LoC numpy                                                                     |
-| **acf** | autocorrelation                                                 | textbook                                                                           |
-| **yin** | cumulative‑mean normalized diff (De Cheveigné & Kawahara 2002)  | [`yin-pitch`](https://github.com/patkruk/pitch-detection/tree/master/yin)          |
-| **mpm** | normalized squared diff + clarity metric (McLeod & Wyvill 2005) | adapted from [`sevagh/pitch-detection`](https://github.com/sevagh/pitch-detection) |
+```bash
+pda --algo yin
+```
 
----
+key flags:
 
-## 🛠️ development
+- `--algo` chooses the detector (`zcr`, `acf`, `yin`, `mpm`)
+- `--sr` and `--frames` control sample rate and window length
+- `--smooth`, `--gate`, and `--update-rate` adjust display behavior
+- `--log` writes csv output with timestamps, frequency, note, rms, and algo id
+- `--debug` prints rms levels only
 
-1. `pre-commit install` – lints with *black* & *ruff*.
-2. `pytest` – runs smoke tests & accuracy fixtures.
-3. `scripts/bench.py` – sweeps sine 50 Hz → 2 kHz, outputs CSV of absolute error per algo.
+### process an audio file
 
-### roadmap
+```bash
+pda --file path/to/take.wav --algo mpm --frames 1024
+```
 
-* [x] rolling‑median smoothing for UI stability
-* [x] CSV logger flag (`--log file.csv`)
-* [ ] optional PyInstaller one‑file builds (Win/Linux/macOS)
-* [ ] latency benchmark against hardware strobe tuner
+### tweak smoothing and gating
 
----
+```bash
+pda --smooth 3 --gate 0.01 --no-cents
+```
 
-## 🤝 contributing
+## algorithms
 
-Pull requests welcome! Please file an issue first if it’s a major feature so we can bikeshed together. All code under `src/` must pass unit tests & `ruff --fix`.
+- `zcr`: zero-crossing rate baseline
+- `acf`: autocorrelation with adaptive peak picking
+- `yin`: cumulative-mean normalized difference (de cheveigné & kawahara, 2002)
+- `mpm`: mcLeod pitch method with nsdf maxima search
 
----
+## development
 
-## 📜 license
+```bash
+uv pip install -e .[dev]
+pytest
+scripts/bench.py
+```
 
-Released under the MIT License – see [LICENSE](LICENSE) for details.
+`scripts/bench.py` sweeps 50 hz to 2 khz and writes a csv of absolute error for each algorithm.
+
+## license
+
+mit, see [LICENSE](LICENSE).
