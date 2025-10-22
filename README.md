@@ -13,7 +13,7 @@
 ## install
 
 ```bash
-git clone https://github.com/yourname/pda-cli.git
+git clone https://github.com/saavylab/pda-cli.git
 cd pda-cli
 uv venv
 source .venv/bin/activate
